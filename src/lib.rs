@@ -141,14 +141,30 @@ impl Pool {
         self.sleeping.load(Ordering::Relaxed)
     }
 
+    /// Schedule a job onto the thread-pool.
+    ///
+    /// Task starts execution only when it arrives to the worker and worker processes it.
+    ///
+    /// If all workers are full and no more can be spawned (due to limited `parallelism` option, see [`Pool::new`])
+    /// task will be executed only when one of the workers becames free.
     pub fn schedule(&self, task: Box<dyn Task>) {
         self.global.lock().unwrap().push(task);
+        /* wake up sleeping workers if there's any. They would take a new job to execute
+            and also wake up task manager *after* stealing from other, low-priority workers
+            and from global-queue. 
+        */
         if self.sleeping() > 0 {
             self.sleeping_cvar.notify_all();
+        } else {
+            /*
+                no sleeping workers means all workers are busy *or* there's no workers at all:
+                wake up task manager thread and spawn a new worker if necessary
+             */
+            self.global_cv.notify_one();
         }
-        self.global_cv.notify_one();
     }
 
+    /// Schedule multiple jobs onto the thread-pool.
     pub fn schedule_multiple(&self, mut tasks: Vec<Box<dyn Task>>) {
         if tasks.is_empty() {
             return;
@@ -160,6 +176,8 @@ impl Pool {
 
         if self.sleeping() > 0 {
             self.sleeping_cvar.notify_all();
+        } else {
+            self.global_cv.notify_one();
         }
     }
 
