@@ -175,7 +175,7 @@ impl Pool {
                 .unwrap();
 
             let mut workers = pool.workers.lock().unwrap();
-            // rebuild the heap as some workers might've processed
+            // rebuild the heap as some workers might've processed some tasks and could've became high-priority (empty/almost empty)
             workers.build_heap();
             let target = workers.get(0);
             let mut should_spawn_worker = false;
