@@ -1,0 +1,15 @@
+[package]
+name = "tpool"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rand = "0.8"
+rustix = { version = "^0.38", features = ["process"], default-features = false }
+crossbeam-utils = "0.8"
+crossbeam-queue = "0.3"
+bheap = { git = "https://github.com/arindas/bheap" }
+log = "0.4"
+env_logger= "0.11"
